@@ -57,6 +57,7 @@ For building compressLWE:
 mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=[PATH TO IPCL]
+make
 ```
 # Contributors
 Main contributors to this project, sorted by alphabetical order of first name are:
