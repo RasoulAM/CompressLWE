@@ -9,13 +9,21 @@ int main() {
     uint64_t n = 630;
     uint64_t log_q = 64;
     uint64_t p = 32;
+    bool binaryKeys = true;
+    
+    // This parameter controls how much comrpesssion is achieved
     size_t s = 1;
+    
     assert(log_q <= 64);
 
     // Generate lwe decryption keys of size n with values in [0, q)
     std::vector<uint64_t> lwe_decryption_key(n);
     for (int i = 0; i < n; i++) {
-        lwe_decryption_key[i] = sample(log_q);
+        if (binaryKeys){
+            lwe_decryption_key[i] = sample(1);
+        } else {
+            lwe_decryption_key[i] = sample(log_q);
+        }
     }
 
     // Generate a batch of lwe ciphertexts
@@ -32,7 +40,7 @@ int main() {
     // s is a parameter which controls how compressed the ciphertexts are
     // The higher s is, the more compression is achieved
     // However, the higher s is, the more time it takes to compress 
-    LWEParams params(n, log_q, p);
+    LWEParams params(n, log_q, p, binaryKeys);
     Keys* keys = generateKeys(lwe_decryption_key, s);
 
     // 2- Compress a batch of LWE ciphertexts into 1 CompressedCiphertext [which is a vector of additive ciphers under the hood]

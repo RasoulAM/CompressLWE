@@ -24,8 +24,9 @@ struct LWEParams {
     uint64_t logQ;
     uint64_t p; // Plaintext modulus of underlying lwe scheme
     mpz_class qBig;
+    bool binaryKeys;
 
-    LWEParams(uint64_t n, uint64_t log_q, uint64_t p) : n(n), logQ(log_q), p(p) {
+    LWEParams(uint64_t n, uint64_t log_q, uint64_t p, bool binaryKeys=false) : n(n), logQ(log_q), p(p), binaryKeys(binaryKeys) {
         qBig = 1_mpz << log_q;
     }
 
@@ -38,10 +39,10 @@ struct CompressedCiphertext {
     LWEParams lweParams;
     uint64_t maxCts;
 
-    CompressedCiphertext(hcs::djcs::public_key &pk, LWEParams & lweParams,bool binaryKeys = false): ahe_pk(pk), lweParams(lweParams) {
+    CompressedCiphertext(hcs::djcs::public_key &pk, LWEParams & lweParams): ahe_pk(pk), lweParams(lweParams) {
         uint64_t bitwidth, s;
         s = ahe_pk.as_ptr()->s;
-        if (binaryKeys){
+        if (lweParams.binaryKeys){
             bitwidth = lweParams.logQ;
         }else{
             bitwidth = 2 * lweParams.logQ;
