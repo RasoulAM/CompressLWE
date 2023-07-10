@@ -3,31 +3,52 @@
 
 #include "utils.h"
 
-ipcl::CipherText compressSingle(
-        const ipcl::CipherText &compressionKey,
-        const std::vector<uint64_t> &lweCt,
-        const LWEParams &params);
+mpz_class compressSingle(
+        mpz_vec &compressionKey,
+        hcs::djcs::public_key& ahe_pk,
+        std::vector<uint64_t> &lweCt,
+        LWEParams &params);
+
+[[maybe_unused]] mpz_class compressMPZ(
+        mpz_vec &compressionKey,
+        hcs::djcs::public_key &ahe_pk,
+        mpz_vec &lweCt,
+        LWEParams &params);
+
+CompressedCiphertext compressBatchedEncryptFirst(
+        mpz_vec &compressionKey,
+        hcs::djcs::public_key& ahe_pk,
+        std::vector<std::vector<uint64_t>> &cts,
+        LWEParams &params);
+
+CompressedCiphertext compressBatchedScaleFirst(
+        mpz_vec &compressionKey,
+        hcs::djcs::public_key& ahe_pk,
+        std::vector<std::vector<uint64_t>> &cts,
+        LWEParams &params);
 
 CompressedCiphertext compressBatched(
-        const ipcl::CipherText &compressionKey,
-        const std::vector<std::vector<uint64_t>> &cts,
-        const LWEParams &params);
+        mpz_vec &compressionKey,
+        hcs::djcs::public_key& ahe_pk,
+        std::vector<std::vector<uint64_t>> &cts,
+        LWEParams &params);
 
-uint64_t decryptCompressedSingle(
-        const ipcl::CipherText &resultCt,
-        const ipcl::PrivateKey &paiSk,
-        const LWEParams &params);
+mpz_class decryptCompressedSingle(
+        mpz_class &resultCt,
+        hcs::djcs::private_key& ahe_sk,
+        LWEParams &params);
 
-std::vector<uint64_t> decryptCompressedBatched(
-        const CompressedCiphertext &compressedCiphertext,
-        const ipcl::PrivateKey &paiSk,
-        const LWEParams &params,
-        uint64_t ciphers);
+mpz_vec decryptCompressedBatched(
+        CompressedCiphertext &compressedCiphertext,
+        hcs::djcs::private_key &ahe_sk,
+        LWEParams &params,
+        uint64_t ciphers,
+        bool reverse=true);
 
-Keys generateKeys(const std::vector<uint64_t> &lweKey);
+Keys* generateKeys(std::vector<uint64_t> &lweKey, size_t s =3);
 
 void finalizeDecryption(
-        BigNumber &res,
-        const LWEParams &params);
+        mpz_class &res,
+        LWEParams &params);
 
 #endif //LIBRARY_H

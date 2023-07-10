@@ -3,43 +3,53 @@
 
 #include <cmath>
 #include <utility>
-#include "ipcl/ipcl.hpp"
+#include <vector>
+#include <libhcs++.hpp>
+
+typedef std::vector<mpz_class> mpz_vec;
 
 struct Keys {
-    ipcl::KeyPair paiKeys; //Paillier keypair
-    ipcl::CipherText compKey; //A vector of paillier ciphers
+    hcs::random hr;
+    hcs::djcs::public_key ahe_pk = hcs::djcs::public_key(hr);
+    hcs::djcs::private_key ahe_sk = hcs::djcs::private_key(hr);
+    mpz_vec compKey;
+    explicit Keys(size_t n=630) {
+        compKey = mpz_vec(n);
+    }
+
 };
 
 struct LWEParams {
     uint64_t n; // Ciphertext dimension of underlying lwe scheme
-    uint64_t p; // Plaintext modulus of underlying lwe scheme
     uint64_t logQ;
-    BigNumber qBig;
+    uint64_t p; // Plaintext modulus of underlying lwe scheme
+    mpz_class qBig;
 
     LWEParams(uint64_t n, uint64_t log_q, uint64_t p) : n(n), logQ(log_q), p(p) {
-        this->qBig = 1;
-        for (uint64_t i = 0; i < log_q; i++) {
-            this->qBig *= 2;
-        }
+        qBig = 1_mpz << log_q;
     }
+
 };
 
 struct CompressedCiphertext {
-    BigNumber scale; // width of every lwe cipher in packed paillier cipher
-    uint64_t paiBitLen = 2048;
-
-    uint64_t logScale;
+    mpz_class scale{};
+    mpz_vec ahe_cts;
+    hcs::djcs::public_key ahe_pk;
+    LWEParams lweParams;
     uint64_t maxCts;
 
-    std::vector<ipcl::CipherText> pCts;
-
-    CompressedCiphertext(uint64_t n, uint64_t log_q, uint64_t p) {
-        logScale = (uint64_t) ceil(log2(n + 1) + 2 * log_q);
-        scale = 1;
-        for (uint64_t i = 0; i < logScale; i++) {
-            scale *= 2;
+    CompressedCiphertext(hcs::djcs::public_key &pk, LWEParams & lweParams,bool binaryKeys = false): ahe_pk(pk), lweParams(lweParams) {
+        uint64_t bitwidth, s;
+        s = ahe_pk.as_ptr()->s;
+        if (binaryKeys){
+            bitwidth = lweParams.logQ;
+        }else{
+            bitwidth = 2 * lweParams.logQ;
         }
-        maxCts = (uint64_t) std::floor((float) paiBitLen / logScale);
+        double ahe_capacity = 2047.0*s;
+        uint64_t logScale = (uint64_t) ceil(log2(lweParams.n + 1) + bitwidth);
+        scale = 1_mpz << logScale;
+        maxCts = (uint64_t) std::floor(ahe_capacity / (double) logScale);
     }
 };
 

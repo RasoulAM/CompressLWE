@@ -9,6 +9,7 @@ int main() {
     uint64_t n = 630;
     uint64_t log_q = 64;
     uint64_t p = 32;
+    size_t s = 1;
     assert(log_q <= 64);
 
     // Generate lwe decryption keys of size n with values in [0, q)
@@ -18,7 +19,7 @@ int main() {
     }
 
     // Generate a batch of lwe ciphertexts
-    uint64_t num_cts = 100;
+    uint64_t num_cts = 10;
     std::vector<std::vector<uint64_t>> lwe_cts(num_cts);
     for (int i = 0; i < num_cts; i++) {
         lwe_cts[i] = std::vector<uint64_t>(n + 1);
@@ -28,27 +29,32 @@ int main() {
     }
 
     // 1- Cast LWE params and Generate Paillier and Compression keys
+    // s is a parameter which controls how compressed the ciphertexts are
+    // The higher s is, the more compression is achieved
+    // However, the higher s is, the more time it takes to compress 
     LWEParams params(n, log_q, p);
-    Keys keys = generateKeys(lwe_decryption_key);
+    Keys* keys = generateKeys(lwe_decryption_key, s);
 
-    // 2- Compress a batch of LWE ciphertexts into 1 CompressedCiphertext [a vector of paillier ciphers]
+    // 2- Compress a batch of LWE ciphertexts into 1 CompressedCiphertext [which is a vector of additive ciphers under the hood]
     CompressedCiphertext compressed_ct = compressBatched(
-            keys.compKey,
+            keys->compKey,
+            keys->ahe_pk,
             lwe_cts,
             params
     );
 
     // 3- Decrypt the batch of compressed ciphertexts
-    std::vector<uint64_t> decrypted = decryptCompressedBatched(
+    mpz_vec decrypted = decryptCompressedBatched(
             compressed_ct,
-            keys.paiKeys.priv_key,
+            keys->ahe_sk,
             params,
-            num_cts
+            num_cts,
+            true
     );
 
     // Make sure decryption works correctly
-    for (int i = 0; i < num_cts; i++) {
-        uint64_t lwe_decrypted = decryptLWE(lwe_cts[i], lwe_decryption_key, params);
+    for (uint64_t i = 0; i < num_cts; i++) {
+        mpz_class lwe_decrypted = decryptLWE(lwe_cts[i], lwe_decryption_key, params);
         assert(decrypted[i] == lwe_decrypted);
     }
     std::cout << "Batched Test Passed!" << std::endl;
